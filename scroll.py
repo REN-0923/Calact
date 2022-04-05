@@ -258,7 +258,7 @@ class App:
             player_map_y = y // 8 + base_y
             """
             衝突判定
-   こことleft→_________←rightここで フォーリンラブ
+   こことleft→_________←rightここで 
             |        |
             |        |
             |        |
