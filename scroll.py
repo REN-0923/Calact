@@ -2,6 +2,7 @@ import pyxel
 from  katakana import KATAKANA
 
 FALLING_POWER = 1
+STAGE_COLOR = "green"
 
 class Player:
     def __init__(self):
@@ -10,9 +11,25 @@ class Player:
         self.dot_y = 8
 
         #何枚目のマップにいるか
-        self.minimap_x = 1
-        self.minimap_y = 1
-        
+        if STAGE_COLOR == "green":
+            self.minimap_x = 1
+            self.minimap_y = 1
+        elif STAGE_COLOR == "blue":
+            self.minimap_x = 7
+            self.minimap_y = 1
+        elif STAGE_COLOR == "yellow":
+            self.minimap_x = 1
+            self.minimap_y = 3
+        elif STAGE_COLOR == "gray":
+            self.minimap_x = 9
+            self.minimap_y = 4
+        elif STAGE_COLOR == "red":
+            self.minimap_x = 1
+            self.minimap_y = 7
+        else:
+            self.minimap_x = 1
+            self.minimap_y = 1
+
         #どのポーズか
         self.pose = (8,0)
 
@@ -28,6 +45,18 @@ class Player:
         #ドアの前にいるか
         self.is_standing_door = False
 
+        #攻撃できる回数(アイテム取って増える)
+        self.bullet = 0
+
+        #ゲームオーバーか否か
+        self.is_game_over = False
+
+        #操作可能か否か
+        self.is_playing = True
+
+        #どの色のステージにいるか
+        #self.stage_color = "green"
+
     def player_update(self, x, y):
         self.dot_x = x
         self.dot_y = y
@@ -35,27 +64,44 @@ class Player:
     def player_minimap_update(self, x, y):
         self.minimap_x = x
         self.minimap_y = y
+
+    def whole_tile_coordinate_X(self):
+        x = 16*(self.minimap_x-1)
+        return self.dot_x/8 + x
+
+    def whole_tile_coordinate_Y(self):
+        y = 16*(self.minimap_y-1)
+        return self.dot_y/8 + y
         
 class App:
     def __init__(self):
         self.player = Player()
         self.katakana = KATAKANA()
 
+
         pyxel.init(128, 128, title="scroll")
         pyxel.load("scroll.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        self.update_player()
-        
-        self.jump()
-        self.down()
-        self.check_sign()
-        self.check_door()
-        self.update_stage()
+        if self.player.is_playing == True:
+            self.update_player()
+            
+            self.jump()
+            self.down()
+            self.check_sign()
+            self.check_door()
+            self.check_needle_magma()
+            self.check_stage()
+            self.update_stage()
+            #print(STAGE_COLOR)
 
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
+
+        if pyxel.btnp(pyxel.KEY_R) and self.player.is_playing == False:
+            self.player.is_playing == True
+            self.restart()
 
 #BASE------------------------------------------------------
     def get_tilemap(self, x, y):
@@ -287,38 +333,80 @@ class App:
         return False
 
     def check_sign(self):
-        x = 16*(self.player.minimap_x-1)
-        y = 16*(self.player.minimap_y-1)
-        map_x = self.player.dot_x/8 + x
-        map_y = self.player.dot_y/8 + y
-
+        map_x = self.player.whole_tile_coordinate_X()
+        map_y = self.player.whole_tile_coordinate_Y()
+        
         if self.get_tilemap(map_x, map_y) == (0,3):
             self.player.is_reading = True
         else:
             self.player.is_reading = False
 
     def check_door(self):
-        x = 16*(self.player.minimap_x-1)
-        y = 16*(self.player.minimap_y-1)
-        map_x = self.player.dot_x/8 + x
-        map_y = self.player.dot_y/8 + y
+        map_x = self.player.whole_tile_coordinate_X()
+        map_y = self.player.whole_tile_coordinate_Y()
         door_list = [(5,3), (5,4), (6,3), (6,4)]
         if self.get_tilemap(map_x, map_y) in door_list:
             self.player.is_standing_door = True
         else:
             self.player.is_standing_door = False
+
+
+    def check_needle_magma(self):
+        map_x = self.player.whole_tile_coordinate_X()
+        map_y = self.player.whole_tile_coordinate_Y()
+        enemy_list = [(5,2), (6,2), (7,2), (5,5)]
+        if self.get_tilemap(map_x, map_y) in enemy_list:
+            self.player.is_game_over = True
+        else:
+            self.player.is_game_over = False
+
+    def check_stage(self):
+        global STAGE_COLOR
+        minimap_coordinate = (self.player.minimap_x, self.player.minimap_y)
+        if minimap_coordinate == (1,1):
+            STAGE_COLOR = "green"
+        if minimap_coordinate == (7,1):
+            STAGE_COLOR = "blue"
+        if minimap_coordinate == (1,3):
+            STAGE_COLOR = "yellow"
+        if minimap_coordinate == (9,4):
+            STAGE_COLOR = "gray"
+        if minimap_coordinate == (1,7):
+            STAGE_COLOR = "red"
+
+
+    def restart(self):
+        self.player=Player()
+    
         
+
+    """  
+    def check_item(self):
+        map_x = self.player.whole_tile_coordinate_X()
+        map_y = self.player.whole_tile_coordinate_Y()
+        item_list = [(0,4), (1,4), (2,4), (3,4)]
+        if self.get_tilemap(map_x, map_y) in item_list:
+            print(self.player.bullet)
+            self.player.bullet += 1
+            pyxel.blt(self.player.dot_x, self.player.dot_y, 0, 48, 0, 8, 8)
+    """ 
 #DRAW------------------------------------------------------
     def draw(self):
         pyxel.cls(0)
         self.draw_tilemap()
         self.draw_player()
         self.draw_sign()
+
+        if self.player.is_game_over == True:
+            self.player.is_playing = False
+            pyxel.cls(0)
+            pyxel.text(20, 30, "YOU ARE DEAD", 8)
+            pyxel.text(20, 70, "R = RETRY", 8)
         
 
     def draw_tilemap(self):
-        u = 128*(self.player.minimap_x-1)
-        v = 128*(self.player.minimap_y-1)
+        u = 128*(self.player.minimap_x -1)
+        v = 128*(self.player.minimap_y -1)
         pyxel.bltm(0,0,0,u,v,128,128)
 
     def draw_player(self):
@@ -329,17 +417,17 @@ class App:
             if self.player.minimap_y == 1:
                 if self.player.minimap_x == 2:
                     self.katakana.draw_katakana(8, 40 , ["SI", "DAKUTEN", "YA", "NN", "HU", "HANDAKUTEN", "SI", "TE", "MI", "YO", "U", "!"])
-                elif self.player.minimap_x == 3:
-                    self.katakana.draw_katakana(8, 40, ["O", "KA", "SI", "WO", "TA", "HE", "DAKUTEN", "TA", "RA"])
-                    self.katakana.draw_katakana(8, 50, ["TO", "HE", "DAKUTEN", "NA", "KU", "NA", "RU", "YO"])
+                #elif self.player.minimap_x == 3:
+                    #self.katakana.draw_katakana(8, 40, ["O", "KA", "SI", "WO", "TA", "HE", "DAKUTEN", "TA", "RA"])
+                    #self.katakana.draw_katakana(8, 50, ["TO", "HE", "DAKUTEN", "NA", "KU", "NA", "RU", "YO"])
                 elif self.player.minimap_x == 4:
-                    self.katakana.draw_katakana(8,40, ["A", "RE", "KA", "DAKUTEN", "TE", "KI", "KUTEN"])
-                    self.katakana.draw_katakana(8, 50, ["A", "TA", "RA", "NA", "I", "TE", "DAKUTEN", "!"])
-                elif self.player.minimap_x == 5:
-                    self.katakana.draw_katakana(8, 40, ["O", "KA", "SI", "WO", "TA", "HE", "DAKUTEN","TE", "TA", "RA"])
-                    self.katakana.draw_katakana(8, 50, ["SU", "HE", "HANDAKUTEN", "I", "SU", "KI", "I", "TE", "DAKUTEN"])
-                    self.katakana.draw_katakana(8, 60, ["TI", "KA", "KU", "NO", "TE", "KI", "WO"])
-                    self.katakana.draw_katakana(8, 70, ["KO", "U", "KE", "DAKUTEN", "KI", "TE", "DAKUTEN", "KI", "RU"])
+                    self.katakana.draw_katakana(8,40, ["TO", "KE", "DAKUTEN", "HA"])
+                    self.katakana.draw_katakana(8, 50, ["YO", "KE", "YO", "U", "NE", "!"])
+                #elif self.player.minimap_x == 5:
+                    #self.katakana.draw_katakana(8, 40, ["O", "KA", "SI", "WO", "TA", "HE", "DAKUTEN","TE", "TA", "RA"])
+                    #self.katakana.draw_katakana(8, 50, ["SU", "HE", "HANDAKUTEN", "I", "SU", "KI", "I", "TE", "DAKUTEN"])
+                    #self.katakana.draw_katakana(8, 60, ["TI", "KA", "KU", "NO", "TE", "KI", "WO"])
+                    #self.katakana.draw_katakana(8, 70, ["KO", "U", "KE", "DAKUTEN", "KI", "TE", "DAKUTEN", "KI", "RU"])
                 elif self.player.minimap_x == 6:
                     self.katakana.draw_katakana(8, 40, ["KO", "KO", "KA", "RA", "HO", "NN", "HA", "DAKUTEN", "NN"])
                     self.katakana.draw_katakana(8, 50, ["KA", "DAKUTEN", "NN", "HA", "DAKUTEN", "RE", "!"])
