@@ -93,7 +93,9 @@ class App:
             self.check_door()
             self.check_needle_magma()
             self.check_stage()
+            self.check_big_jump()
             self.update_stage()
+            
             #print(STAGE_COLOR)
 
         if pyxel.btnp(pyxel.KEY_Q):
@@ -152,9 +154,6 @@ class App:
                 self.player.jump_power = -10
                 self.player.can_jump = False
         
-        elif pyxel.btn(pyxel.KEY_SPACE):
-            if self.check_wall("up", self.player.dot_x, self.player.dot_y) == False:
-                self.player.dot_y -= 2
 
     def jump(self):
             #ジャンプできる時それは飛ぶ処理がいらない時！
@@ -261,7 +260,7 @@ class App:
 
 #CHECK-----------------------------------------------------
     def check_wall(self, vec, x, y):
-        wall_list = [(0,2),(1,2),(2,2),(3,2),(4,2),(8,5),(6,5)]
+        wall_list = [(0,2),(1,2),(2,2),(3,2),(4,2),(8,5),(6,5),(6,1)]
         base_x = (self.player.minimap_x-1)*16
         base_y = (self.player.minimap_y-1)*16
 
@@ -354,7 +353,7 @@ class App:
     def check_needle_magma(self):
         map_x = self.player.whole_tile_coordinate_X()
         map_y = self.player.whole_tile_coordinate_Y()
-        enemy_list = [(5,2), (6,2), (7,2), (5,5)]
+        enemy_list = [(5,2), (6,2), (7,2), (5,5), (7,1)]
         if self.get_tilemap(map_x, map_y) in enemy_list:
             self.player.is_game_over = True
         else:
@@ -374,28 +373,60 @@ class App:
         if minimap_coordinate == (1,7):
             STAGE_COLOR = "red"
 
+    def check_big_jump(self):
+        map_x = self.player.whole_tile_coordinate_X()
+        map_y = self.player.whole_tile_coordinate_Y()
+        if self.get_tilemap(map_x, map_y) == (3,5):
+            self.player.jump_power = -13
+            self.player.can_jump = False
+            self.jump()
 
     def restart(self):
         self.player=Player()
     
+    def change_magma(self):
+        #print(True)
+        for x in range(0,16):
+            for y in range(0, 16):
+                if self.get_tilemap(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y)==(6,2):
+                    if pyxel.frame_count % 100 >= 50:
+                        pyxel.tilemap(0).pset(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y, (5,2))
+                if self.get_tilemap(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y)==(5,2):
+                    if pyxel.frame_count % 100 < 40:
+                        pyxel.tilemap(0).pset(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y, (6,2))
         
+    def change_green_block(self):
+        for x in range(0,16):
+            for y in range(0, 16):
+                if self.get_tilemap(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y)==(8,5):
+                    if pyxel.frame_count % 100 >= 50:
+                        pyxel.tilemap(0).pset(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y, (9,5))
+                if self.get_tilemap(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y)==(9,5):
+                    if pyxel.frame_count % 100 < 40:
+                        pyxel.tilemap(0).pset(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y, (8,5))
 
-    """  
-    def check_item(self):
-        map_x = self.player.whole_tile_coordinate_X()
-        map_y = self.player.whole_tile_coordinate_Y()
-        item_list = [(0,4), (1,4), (2,4), (3,4)]
-        if self.get_tilemap(map_x, map_y) in item_list:
-            print(self.player.bullet)
-            self.player.bullet += 1
-            pyxel.blt(self.player.dot_x, self.player.dot_y, 0, 48, 0, 8, 8)
-    """ 
+    def change_laser(self):
+        for x in range(0,16):
+            for y in range(0, 16):
+                if self.get_tilemap(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y)==(6,1):
+                    #print(True)
+                    if pyxel.frame_count % 100 < 20:
+                        for i in range(1, 4):
+                            pyxel.tilemap(0).pset(16*(self.player.minimap_x-1)+x+i, 16*(self.player.minimap_y-1)+y, (7,1))
+                
+                if self.get_tilemap(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y)==(7,1):
+                    if pyxel.frame_count % 100 >= 20:
+                        pyxel.tilemap(0).pset(16*(self.player.minimap_x-1)+x, 16*(self.player.minimap_y-1)+y, (2,3))
+
 #DRAW------------------------------------------------------
     def draw(self):
         pyxel.cls(0)
         self.draw_tilemap()
         self.draw_player()
         self.draw_sign()
+        self.change_magma()
+        self.change_green_block()
+        self.change_laser()
 
         if self.player.is_game_over == True:
             self.player.is_playing = False
@@ -431,5 +462,23 @@ class App:
                 elif self.player.minimap_x == 6:
                     self.katakana.draw_katakana(8, 40, ["KO", "KO", "KA", "RA", "HO", "NN", "HA", "DAKUTEN", "NN"])
                     self.katakana.draw_katakana(8, 50, ["KA", "DAKUTEN", "NN", "HA", "DAKUTEN", "RE", "!"])
-
+            elif self.player.minimap_y ==3:
+                if self.player.minimap_x == 4:
+                    self.katakana.draw_katakana(8, 40, ["TO", "RA", "NN", "HO", "HANDAKUTEN","RI", "NN", "TE", "DAKUTEN"])
+                    self.katakana.draw_katakana(8, 50, ["TA","DAKUTEN", "I", "SI", "DAKUTEN", "YA", "NN", "HU", "HANDAKUTEN"])
+            elif self.player.minimap_y ==4:
+                if self.player.minimap_x == 2:
+                    self.katakana.draw_katakana(8, 40, ["KO", "NO", "SA", "KI"])
+                    self.katakana.draw_katakana(8, 50, ["KI", "E", "RU", "YU", "KA"])
+                if self.player.minimap_x == 3:
+                    self.katakana.draw_katakana(8, 40, ["KA", "HE", "DAKUTEN", "SO", "DAKUTEN", "I", "NI"])
+                    self.katakana.draw_katakana(8, 50, ["O", "TI", "TE", "MI", "TE", "!"])
+                if self.player.minimap_x == 9:
+                    self.katakana.draw_katakana(8, 20, ["RE", "I", "SA", "DAKUTEN", "A", "NI"])
+                    self.katakana.draw_katakana(8, 30, ["TI", "YU", "U", "I"])
+            elif self.player.minimap_y == 9:
+                if self.player.minimap_x == 1:
+                    self.katakana.draw_katakana(8, 40, ["KO", "NO", "SA", "KI","KI", "WO", "TU", "KE", "TE", "!"])
+                    self.katakana.draw_katakana(8, 50, ["TO", "DAKUTEN", "U", "TA", "I", "SI", "RI", "YO", "KU"])
+                    self.katakana.draw_katakana(8, 60, ["MA", "TU", "KU", "SU", "TE", "DAKUTEN", "!"])
 App()
