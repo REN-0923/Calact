@@ -77,7 +77,7 @@ class App:
     def __init__(self):
         self.player = Player()
         self.katakana = KATAKANA()
-
+        self.music_flug = False
 
         pyxel.init(128, 128, title="scroll")
         pyxel.load("scroll.pyxres")
@@ -96,7 +96,12 @@ class App:
             self.check_big_jump()
             self.update_stage()
             
+            
             #print(STAGE_COLOR)
+        if self.music_flug == False and self.player.is_playing==True:
+            pyxel.playm(0, loop=True)
+            self.music_flug = True
+
 
         if pyxel.btnp(pyxel.KEY_Q):
             pyxel.quit()
@@ -121,6 +126,7 @@ class App:
 
                 if pyxel.btnp(pyxel.KEY_UP):
                     if self.player.can_jump: 
+                        pyxel.playm(1)
                         self.player.jump_power = -10
                         self.player.can_jump = False
 
@@ -140,6 +146,7 @@ class App:
 
                 if pyxel.btnp(pyxel.KEY_UP):
                     if self.player.can_jump: 
+                        pyxel.playm(1)
                         self.player.jump_power = -10
                         self.player.can_jump = False
 
@@ -151,6 +158,7 @@ class App:
         
         elif pyxel.btnp(pyxel.KEY_UP):
             if self.player.can_jump: 
+                pyxel.playm(1)
                 self.player.jump_power = -10
                 self.player.can_jump = False
         
@@ -355,6 +363,7 @@ class App:
         map_y = self.player.whole_tile_coordinate_Y()
         enemy_list = [(5,2), (6,2), (7,2), (5,5), (7,1)]
         if self.get_tilemap(map_x, map_y) in enemy_list:
+            pyxel.playm(2)
             self.player.is_game_over = True
         else:
             self.player.is_game_over = False
