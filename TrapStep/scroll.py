@@ -1,5 +1,5 @@
 import pyxel 
-from  katakana import KATAKANA
+#from  assets.katakana import KATAKANA
 
 FALLING_POWER = 1
 STAGE_COLOR = "green"
@@ -7,8 +7,15 @@ STAGE_COLOR = "green"
 class Player:
     def __init__(self):
         #ウィンドウ内での座標
-        self.dot_x = 8
-        self.dot_y = 8
+        if STAGE_COLOR == "red2":
+            self.dot_x = 8
+            self.dot_y = 100
+        elif STAGE_COLOR == "gray2":
+            self.dot_x = 100
+            self.dot_y = 100
+        else:
+            self.dot_x = 8
+            self.dot_y = 8
 
         #何枚目のマップにいるか
         if STAGE_COLOR == "green":
@@ -17,15 +24,27 @@ class Player:
         elif STAGE_COLOR == "blue":
             self.minimap_x = 7
             self.minimap_y = 1
-        elif STAGE_COLOR == "yellow":
+        elif STAGE_COLOR == "yellow1":
             self.minimap_x = 1
             self.minimap_y = 3
-        elif STAGE_COLOR == "gray":
+        elif STAGE_COLOR == "yellow2":
+            self.minimap_x = 5
+            self.minimap_y = 4
+        elif STAGE_COLOR == "gray1":
             self.minimap_x = 9
             self.minimap_y = 4
-        elif STAGE_COLOR == "red":
+        elif STAGE_COLOR == "gray2":
+            self.minimap_x = 10
+            self.minimap_y = 6
+        elif STAGE_COLOR == "red1":
             self.minimap_x = 1
             self.minimap_y = 7
+        elif STAGE_COLOR == "red2":
+            self.minimap_x = 1
+            self.minimap_y = 9
+        elif STAGE_COLOR == "red3":
+            self.minimap_x = 2
+            self.minimap_y = 11
         else:
             self.minimap_x = 1
             self.minimap_y = 1
@@ -73,14 +92,79 @@ class Player:
         y = 16*(self.minimap_y-1)
         return self.dot_y/8 + y
         
+class KATAKANA:
+    def __init__(self):
+        self.katakana_dic = {
+            "A":(0,0),
+            "I":(1,0),
+            "U":(2,0),
+            "E":(3,0),
+            "O":(4,0),
+            "KA":(0,1),
+            "KI":(1,1),
+            "KU":(2,1),
+            "KE":(3,1),
+            "KO":(4,1),
+            "SA":(0,2),
+            "SI":(1,2),
+            "SU":(2,2),
+            "SE":(3,2),
+            "SO":(4,2),
+            "TA":(0,3),
+            "TI":(1,3),
+            "TU":(2,3),
+            "TE":(3,3),
+            "TO":(4,3),
+            "NA":(0,4),
+            "NI":(1,4),
+            "NU":(2,4),
+            "NE":(3,4),
+            "NO":(4,4),
+            "HA":(0,5),
+            "HI":(1,5),
+            "HU":(2,5),
+            "HE":(3,5),
+            "HO":(4,5),
+            "MA":(0,6),
+            "MI":(1,6),
+            "MU":(2,6),
+            "ME":(3,6),
+            "MO":(4,6),
+            "YA":(0,7),
+            "YU":(2,7),
+            "YO":(4,7),
+            "RA":(0,8),
+            "RI":(1,8),
+            "RU":(2,8),
+            "RE":(3,8),
+            "RO":(4,8),
+            "WA":(0,9),
+            "WO":(2,9),
+            "NN":(4,9),
+            "!":(0,10),
+            "?":(1,10,),
+            "KUTEN":(2,10),
+            "TOUTEN":(3,10),
+            "DAKUTEN":(4,10),
+            "HANDAKUTEN":(5,10),
+        }
+
+    def draw_katakana(self, x, y, text_array): 
+        for i in range(len(text_array)):
+            text = self.katakana_dic[text_array[i]]
+            text_x = text[0]*8
+            text_y = text[1]*8
+            pyxel.blt(x+i*8, y, 1, text_x, text_y, 8, 8, )
+
 class App:
     def __init__(self):
         self.player = Player()
         self.katakana = KATAKANA()
         self.music_flug = False
+        self.music_flug_clear = False
 
         pyxel.init(128, 128, title="scroll")
-        pyxel.load("scroll.pyxres")
+        pyxel.load("assets/scroll.pyxres")
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -376,11 +460,23 @@ class App:
         if minimap_coordinate == (7,1):
             STAGE_COLOR = "blue"
         if minimap_coordinate == (1,3):
-            STAGE_COLOR = "yellow"
+            STAGE_COLOR = "yellow1"
+        if minimap_coordinate == (5,4):
+            STAGE_COLOR = "yellow2"
         if minimap_coordinate == (9,4):
-            STAGE_COLOR = "gray"
+            STAGE_COLOR = "gray1"
+        if minimap_coordinate == (10,6):
+            STAGE_COLOR = "gray2"
         if minimap_coordinate == (1,7):
-            STAGE_COLOR = "red"
+            STAGE_COLOR = "red1"
+        if minimap_coordinate == (1,9):
+            STAGE_COLOR = "red2"
+        if minimap_coordinate == (2,11):
+            STAGE_COLOR = "red3"
+        if minimap_coordinate == (15,10):
+            if self.music_flug_clear == False and self.player.is_playing==True:
+                pyxel.playm(3)
+                self.music_flug_clear = True
 
     def check_big_jump(self):
         map_x = self.player.whole_tile_coordinate_X()
